@@ -6,6 +6,8 @@ import com.jsonparser.model.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,8 +38,10 @@ public class BriefcaseController {
     }
 
     public void getShares (){
+        System.out.print("Load file...");
         try {
             inquiry = mapper.readValue(new FileInputStream(readJsonFile),Inquiry.class);
+            System.out.println("Done!");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -45,8 +49,10 @@ public class BriefcaseController {
         calculateAssetValue();
         calculateAssetValueBySector();
         calculateAllBriefcase();
+        System.out.print("Save file...");
         try {
             mapper.writeValue(writeJsonFile, allBriefcase);
+            System.out.println("Done!");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -59,8 +65,10 @@ public class BriefcaseController {
             simbol[i] = stocks.get(i).getSymbol();
         }
         for (int j = 0; j < simbol.length; j++) {
+            System.out.print("Download data from the web for " + simbol[j] + "...");
             try {
                 detailedStocks.add(mapper.readValue(buildUrl(simbol[j]),DetailedStocks.class));
+                System.out.println("Done!");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -120,9 +128,12 @@ public class BriefcaseController {
             valuetemp += allocationsList.get(i).getAssetValue();
         }
         allBriefcase.setValue(valuetemp);
+        BigDecimal proptemp;
         for (int i = 0; i < allocationsList.size(); i++) {
             float assetValueTemp = allocationsList.get(i).getAssetValue();
-            allocationsList.get(i).setProportion(assetValueTemp / valuetemp);
+            proptemp = new BigDecimal(assetValueTemp / valuetemp);
+            float proportiontemp = proptemp.setScale(3, RoundingMode.HALF_EVEN).floatValue();
+            allocationsList.get(i).setProportion(proportiontemp);
         }
         allBriefcase.setAllocations(allocationsList);
     }
